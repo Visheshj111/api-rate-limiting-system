@@ -1,0 +1,14 @@
+node_modules
+dist
+.env*
+!.env.example
+!.env.local.example
+*.log
+.DS_Store
+next-env.d.ts
+.next
+.next-*
+*.tsbuildinfo
+*.dump
+backups/
+artifacts/*failure*
