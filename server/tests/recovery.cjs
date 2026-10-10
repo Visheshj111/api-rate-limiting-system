@@ -52,4 +52,4 @@ async function waitFor(check, timeout = 25000) {
     if (owner) await pool.query("DELETE FROM admins WHERE admin_id=$1", [owner]);
     await pool.end();
   }
-})().catch(err => { console.error(err.message); process.exit(1); });
+})().catch(err => { console.error(err.stack); process.exit(1); });

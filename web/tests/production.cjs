@@ -17,8 +17,8 @@ const fs = require('node:fs');
   await page.getByLabel('Your name',{exact:true}).fill('Browser QA');await page.getByLabel('Username',{exact:true}).fill('browser_'+tag);
   await page.getByLabel('Email address',{exact:true}).fill('browser-'+tag+'@example.com');await page.getByLabel('Password',{exact:true}).fill(password);await page.getByLabel('Confirm password',{exact:true}).fill(password);
   accounts.push('browser-'+tag+'@example.com');await page.getByRole('button',{name:'Create admin account',exact:true}).click();await page.getByRole('heading',{name:'Traffic overview'}).waitFor();
-  assert.deepEqual((await request('/api/reports/stats')).data,{allowed:0,blocked:0});assert.equal((await request('/api/clients')).data.length,0);
-  await page.screenshot({path:'../artifacts/fresh-account-empty-dashboard.png',fullPage:true});
+  assert.deepEqual((await request('/api/reports/stats')).data,{allowed:0,blocked:0});assert.equal((await request('/api/clients')).data.length,0);if((await page.viewportSize()).width>=1024)assert.equal(await page.getByRole('button',{name:'Browse workspace',exact:true}).isVisible(),false);
+  await page.waitForTimeout(450);await page.screenshot({path:'../artifacts/fresh-account-empty-dashboard.png',fullPage:true});
   await page.goto(web+'/clients');await page.getByRole('button',{name:'Register client',exact:true}).first().click();
   await page.getByPlaceholder('e.g. Checkout service').fill('Browser checkout');
   const entry=page.getByRole('textbox',{name:'Request limit',exact:true});await entry.focus();await entry.press('End');for(let i=0;i<4;i++)await entry.press('Backspace');await entry.press('Home');await entry.press('3');
@@ -27,7 +27,7 @@ const fs = require('node:fs');
   await page.getByRole('textbox',{name:'Request limit for Browser checkout',exact:true}).waitFor();
   
   assert.equal(await page.getByRole('textbox',{name:'Request limit for Browser checkout',exact:true}).getAttribute('maxlength'),'4');
-  await page.screenshot({path:'../artifacts/compact-limit-control.png',fullPage:true});
+  await page.waitForTimeout(450);await page.screenshot({path:'../artifacts/compact-limit-control.png',fullPage:true});
   const clients=(await request('/api/clients')).data;assert.equal(clients[0].rateLimit,3);
   await page.goto(web+'/dashboard');await page.getByRole('button',{name:'Send 5 requests',exact:true}).click();await page.getByRole('button',{name:'Run traffic test',exact:true}).click();await page.getByRole('button',{name:'Run traffic test',exact:true}).waitFor({timeout:20000});
   const stats=(await request('/api/reports/stats')).data;assert.equal(stats.allowed+stats.blocked,5);
@@ -35,14 +35,14 @@ const fs = require('node:fs');
   await page.goto(web+'/jobs');await page.getByRole('heading',{name:'Work, in motion.',exact:true}).waitFor();
   await page.goto(web+'/settings');await page.getByRole('heading',{name:'Account settings'}).waitFor();
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  await page.screenshot({path:'../artifacts/production-mobile-settings.png',fullPage:true});
+  await page.waitForTimeout(450);await page.screenshot({path:'../artifacts/production-mobile-settings.png',fullPage:true});
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('button',{name:'Create an admin account',exact:true}).click();
   await page.getByLabel('Your name',{exact:true}).fill('Second Browser QA');await page.getByLabel('Username',{exact:true}).fill('second_'+tag);await page.getByLabel('Email address',{exact:true}).fill('second-'+tag+'@example.com');await page.getByLabel('Password',{exact:true}).fill(password);await page.getByLabel('Confirm password',{exact:true}).fill(password);accounts.push('second-'+tag+'@example.com');await page.getByRole('button',{name:'Create admin account',exact:true}).click();await page.getByRole('heading',{name:'Traffic overview'}).waitFor();
-  assert.deepEqual((await request('/api/reports/stats')).data,{allowed:0,blocked:0});assert.equal((await request('/api/clients')).data.length,0);assert.equal((await request('/api/history/jobs')).data.total,0);
-  await page.screenshot({path:'../artifacts/second-account-empty-mobile.png',fullPage:true});
+  assert.deepEqual((await request('/api/reports/stats')).data,{allowed:0,blocked:0});assert.equal((await request('/api/clients')).data.length,0);if((await page.viewportSize()).width>=1024)assert.equal(await page.getByRole('button',{name:'Browse workspace',exact:true}).isVisible(),false);assert.equal((await request('/api/history/jobs')).data.total,0);
+  await page.waitForTimeout(450);await page.screenshot({path:'../artifacts/second-account-empty-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);assert.deepEqual(policy,[]);
   console.log(JSON.stringify({result:'PASS',checks:['real registration','zero new-account stats','client creation','compact slots','live traffic','activity','jobs','settings','mobile width','same-browser second-account isolation','CSP','no runtime errors'],digitCount}));
- }catch(e){console.log((await page.locator('body').innerText()).slice(-2500));console.log({errors,policy});await page.screenshot({path:'../artifacts/production-browser-failure.png',fullPage:true});throw e;}finally{
+ }catch(e){console.log((await page.locator('body').innerText()).slice(-2500));console.log({errors,policy});await page.waitForTimeout(450);await page.screenshot({path:'../artifacts/production-browser-failure.png',fullPage:true});throw e;}finally{
   for(const email of accounts){await request('/api/auth/logout','POST').catch(()=>{});const login=await request('/api/auth/login','POST',{email,password});if(login.status===200)await request('/api/auth/me','DELETE',{currentPassword:password,confirmation:'DELETE'});}
   await browser.close();
  }

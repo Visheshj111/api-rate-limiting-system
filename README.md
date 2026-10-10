@@ -39,7 +39,7 @@ The console uses shared styles plus the supplied Reactbits component source, wit
 - **Remember me:** unchecked uses a browser-session cookie with a 12-hour server expiry; checked sets a persistent cookie and server expiry of 30 days. Logout revokes the current session. Cookies are HTTP-only, SameSite=Lax, and Secure when `NODE_ENV=production`. Old local-storage tokens are removed.
 - **Notifications:** dashboard traffic notices can be enabled or disabled. Security and product email preferences are stored; email delivery is not connected.
 - **Delete account:** requires the current password and typing `DELETE`. Removes the profile, preferences, sessions, owned clients, jobs, request logs, and saved reports. Other accounts are unaffected.
-- **Loading:** account initialization, sign-in, route transitions, overview, client directory, and settings use skeleton placeholders. Refreshes keep existing data visible; saves and tests show progress and disable duplicate submissions.
+- **Loading:** account initialization and sign-in use full placeholders. During workspace navigation, the sidebar and header stay visible while the destination page uses its own skeleton. Refreshes keep existing data visible; saves and tests show progress and disable duplicate submissions.
 
 The light console uses sage navigation, bordered white panels, and a draggable account flip card with spring motion, pointer tilt, glare, and keyboard controls. Reduced-motion settings disable animations. The dashboard footer no longer lists Redis/PostgreSQL.
 

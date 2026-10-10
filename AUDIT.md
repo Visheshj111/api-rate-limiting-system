@@ -189,6 +189,21 @@ Probe flow:
 8. Return 200 when queued. If enqueue fails after the durable row exists, return 202 explaining that queue recovery is pending.
 9. The worker records processing, waits 200 ms to simulate work, and records completion. Retry/backoff and reconciliation handle interruptions.
 
+### Reviewer API-key demonstration
+
+This is the clearest live demonstration of the limiter. Create a client with a limit of `5` requests in `60` seconds and choose Sliding Window. On the Clients page, use **Copy API key**, paste the value into the PowerShell variable below, then run it while Overview is open:
+
+```powershell
+$key = 'PASTE_THE_CLIENT_API_KEY_HERE'
+1..7 | ForEach-Object {
+  curl.exe -sS -i -H "x-api-key: $key" http://localhost:4000/api/probe
+}
+```
+
+The first five calls return `200` and include `X-RateLimit-Status: allowed`; the next two return `429`, `X-RateLimit-Status: blocked`, and `Retry-After`. Within the Overview refresh interval, the dashboard shows Total requests `7`, Allowed `5`, and Blocked `2`. Activity shows all seven decisions, while Jobs shows only the five allowed requests because blocked requests never create work.
+
+For Docker with a custom `API_PORT`, replace `4000` with that port. After deployment, use the Render backend origin such as `https://your-api.onrender.com/api/probe`; external API consumers should call that backend directly, not the Vercel frontend.
+
 Redis and PostgreSQL do not share a distributed transaction. A dependency failure can consume a token even if a later database write fails. The application fails closed rather than allowing uncounted work. The decision log reports limiter decisions; an allowed decision alone does not prove a downstream job completed. The Jobs screen supplies that separate state.
 
 ## 6. Algorithms: equations, state, and concurrency
@@ -348,7 +363,7 @@ SIGTERM/SIGINT stops accepting new HTTP work, drains requests, closes the worker
 | Card style | Bordered white panels and spacing; original FlipCard supplies its own motion/shadow behavior through props |
 | Layout | Fixed 216 px sidebar on desktop, content max width 1,440 px, 68 px topbar; sidebar becomes an inline mobile bar below 1,024 px |
 | Small screens | Below 640 px, content padding/topbar/metrics shrink; wide tables scroll inside their own containers |
-| Skeletons | `.skeleton` uses a muted background and 1.5-second opacity pulse; screen-reader loading status accompanies hidden decorative blocks |
+| Skeletons | `.skeleton` uses a muted background and 1.5-second opacity pulse; screen-reader loading status accompanies hidden decorative blocks. Workspace navigation keeps the sidebar/header visible and swaps only the destination content for its matching skeleton. |
 | Entrance motion | `.rise` fades/translates by 6 px over 350 ms |
 | Reduced motion | CSS disables transitions/keyframes; original components also use Motion’s reduced-motion hook and simplified interaction paths |
 | Browser title | Next root `metadata` sets QueueShield title/description; `<html lang="en">` sets document language |
@@ -596,4 +611,20 @@ npm run test:browser
 
 On this Windows device browser checks can instead set `CHROMIUM_EXECUTABLE_PATH` to the installed Edge executable. Browser tests use real registration, cookies, client creation, probes, and a second account in the same browser; screenshots go to `artifacts/`. UI-only mock previews are not evidence of backend data isolation.
 
-The final validation results and any material deployment limitations are recorded below after verification. Dependency audit results describe the registry at the audit date, not a permanent guarantee against future advisories.
+### Verification record — 10 October 2026
+
+The following completed successfully on this checkout:
+
+| Check | Result |
+| --- | --- |
+| `server/npm run build` | Passed |
+| `server/npm test` | 10 passed, 0 failed |
+| API Docker production image | Built successfully |
+| Next.js Docker production image | Built successfully (Next.js 16.4.0 optimized build) |
+| Server and web dependency audits | 0 known vulnerabilities at the time they were run |
+| Earlier clean integration execution | Passed ownership, zero-state, foreign-ID, cascade, concurrency, queue, and rate-limit checks |
+| Earlier production browser execution | Passed 12 checks: registration, empty new account, compact limit input, traffic, activity, jobs, settings, mobile layout, second-account isolation, CSP, and client-runtime errors |
+
+After the final error-classification and CSS-layer adjustments, the two production images and backend unit suite were rebuilt successfully. The isolated Docker recovery and browser suites should be run once more before public deployment with the commands above. They could not be rerun in this session because the local Docker approval service became unavailable; no production data was changed by that limitation.
+
+Dependency audit results describe the registry at the audit date, not a permanent guarantee against future advisories.

@@ -57,12 +57,7 @@ clientRouter.patch("/:id", wrap(async (req, res) => {
 }));
 
 clientRouter.delete("/:id", wrap(async (req, res) => {
-  try {
-    const deleted = await db.delete(clients).where(and(eq(clients.clientId, Number(req.params.id)), eq(clients.adminId, res.locals.admin.adminId))).returning({ id: clients.clientId });
-    if (!deleted.length) return res.status(404).json({ error: "Client not found." });
-    res.status(204).end();
-  } catch (err) {
-    if ((err as { code?: string }).code === "23503") return res.status(409).json({ error: "This client has request history or jobs and cannot be deleted." });
-    throw err;
-  }
+  const deleted = await db.delete(clients).where(and(eq(clients.clientId, Number(req.params.id)), eq(clients.adminId, res.locals.admin.adminId))).returning({ id: clients.clientId });
+  if (!deleted.length) return res.status(404).json({ error: "Client not found." });
+  res.status(204).end();
 }));

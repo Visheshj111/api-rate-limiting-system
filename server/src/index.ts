@@ -6,6 +6,7 @@ import { pool } from "./db/client.js";
 import { redis } from "./redis.js";
 import { wrap } from "./lib/auth.js";
 import { randomUUID } from "node:crypto";
+import { errorCause } from "./lib/errors.js";
 import { authRouter } from "./routes/auth.js";
 import { clientRouter } from "./routes/clients.js";
 import { probeRouter } from "./routes/probe.js";
@@ -45,7 +46,8 @@ app.use("/api/history", historyRouter);
 app.use((_req, res) => res.status(404).json({ error: "Endpoint not found." }));
 
 app.use(((err, _req, res, _next) => {
-  const dependencyFailure = ["ECONNREFUSED", "ETIMEDOUT", "57P01", "53300"].includes(err.code) || /Connection is closed|Stream isn't writeable|Command timed out|Connection terminated/.test(err.message || "");
+  const cause = errorCause(err);
+  const dependencyFailure = ["ECONNREFUSED", "ETIMEDOUT", "57P01", "53300", "57014"].includes(cause.code) || cause.name === "MaxRetriesPerRequestError" || /Connection is closed|Stream isn't writeable|Command timed out|Connection terminated|timeout exceeded when trying to connect|^READONLY|^OOM|^LOADING/i.test(cause.message || "");
   const status = dependencyFailure ? 503 : err.status || 500;
   if (status === 500) console.error("API request failed", err.code || err.name);
   res.status(status).json({ error: dependencyFailure ? "A required service is unavailable. Please retry shortly." : status === 500 ? "Something went wrong. Please try again." : status === 413 ? "Request is too large." : status === 400 && err.type === "entity.parse.failed" ? "Invalid JSON." : err.message });

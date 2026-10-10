@@ -1,0 +1,58 @@
+name: Verify
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://queueshield:queueshield@localhost:5432/queueshield
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-only-signing-secret-never-use-for-production
+      API_KEY_SECRET: ci-only-encryption-secret-never-use-for-production
+      APP_PROXY_SECRET: ci-only-proxy-secret-never-use-for-production
+      WEB_ORIGINS: http://localhost:3000
+      API_URL: http://localhost:4000
+      TEST_API_URL: http://localhost:4000
+      TEST_SECOND_API_URL: http://localhost:4101
+      TEST_WEB_URL: http://localhost:3000
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: queueshield
+          POSTGRES_PASSWORD: queueshield
+          POSTGRES_DB: queueshield
+        ports: [5432:5432]
+        options: --health-cmd "pg_isready -U queueshield" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: [6379:6379]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            web/package-lock.json
+      - run: npm ci && npm run build && npm test && npm run db:migrate:prod && npm audit
+        working-directory: server
+      - run: npm ci && npm run build && npm audit && npx playwright install --with-deps chromium
+        working-directory: web
+      - name: Start compiled services
+        run: |
+          (cd server && npm start > /tmp/queueshield-api.log 2>&1) &
+          (cd server && PORT=4101 npm start > /tmp/queueshield-second.log 2>&1) &
+          (cd web && npm start > /tmp/queueshield-web.log 2>&1) &
+          node -e "(async()=>{for(let i=0;i<60;i++){try{if((await fetch('http://localhost:4000/ready')).ok&&(await fetch('http://localhost:3000/login')).ok)return}catch{}await new Promise(r=>setTimeout(r,500))}process.exit(1)})()"
+      - run: npm run test:integration
+        working-directory: server
+      - run: npm run test:browser
+        working-directory: web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-screenshots
+          path: artifacts/*.png

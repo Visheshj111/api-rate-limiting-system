@@ -7,6 +7,7 @@ import { admins, reports, sessions, Admin } from "../db/schema.js";
 import { clearSession, publicAdmin, requireAuth, startSession, throttleAuth, wrap } from "../lib/auth.js";
 import { checkPassword, emailSchema, passwordSchema, usernameSchema } from "../lib/account.js";
 import { env } from "../env.js";
+import { errorCode } from "../lib/errors.js";
 
 export const authRouter = Router();
 authRouter.use((_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
@@ -32,7 +33,7 @@ authRouter.post("/register", throttleAuth, wrap(async (req, res) => {
     });
     res.status(201).json({ admin: publicAdmin(admin) });
   } catch (err) {
-    if ((err as { code?: string }).code === "23505") return res.status(409).json({ error: "That email or username is already in use." });
+    if (errorCode(err) === "23505") return res.status(409).json({ error: "That email or username is already in use." });
     throw err;
   }
 }));
@@ -81,7 +82,7 @@ authRouter.patch("/me", requireAuth, wrap(async (req, res) => {
     });
     res.json({ admin: publicAdmin(updated) });
   } catch (err) {
-    if ((err as { code?: string }).code === "23505") return res.status(409).json({ error: "That email or username is already in use." });
+    if (errorCode(err) === "23505") return res.status(409).json({ error: "That email or username is already in use." });
     throw err;
   }
 }));

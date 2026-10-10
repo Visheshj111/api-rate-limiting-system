@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+@layer components {
 :root { color-scheme: light; }
 body { background: #f7f8fa; color: #202923; -webkit-font-smoothing: antialiased; }
 ::selection { background: #d7edb6; color: #18372a; }
@@ -38,9 +39,9 @@ input, select { min-width: 0; }
 .metric + .metric { @apply border-l; }
 .metric-value { @apply mt-3 text-[34px] font-medium leading-none tracking-[-.05em] tabular-nums; }
 .data-table { @apply w-full whitespace-nowrap text-left text-sm; }
-.data-table th { @apply relative border-b border-line bg-[#fafbf8] px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-muted; }
+.data-table th { @apply relative border-b border-line bg-[#fafbf8] px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted; }
 .data-table select { width: auto; min-width: 128px; }
-.data-table td { @apply border-b border-line/70 px-5 py-4; }
+.data-table td { @apply border-b border-line/70 px-4 py-4; }
 .data-table tbody tr:last-child td { border-bottom: 0; }
 .data-table tbody tr:hover { background: #fafbf8; }
 .client-avatar { @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-[#f0f2eb] text-xs font-semibold text-[#506244]; }
@@ -93,4 +94,5 @@ input, select { min-width: 0; }
   [style*="--cs-accent"] [data-status="success"] > span:not([data-filled]):not([data-show]) { opacity: 1; }
   [style*="--bt-color"] [aria-hidden] { filter: none !important; }
   [data-status][style*="--cc-size"] [data-state] { filter: none !important; }
+}
 }
