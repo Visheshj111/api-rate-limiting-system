@@ -28,6 +28,24 @@ test("breach check sends only the hash prefix, requests padding, and ignores zer
   await assert.rejects(() => checkPassword(password, (async () => new Response(`${hash.slice(5)}:123`)) as typeof fetch), { status: 400 });
 });
 
+test("breach check reuses a recent valid range when the provider briefly becomes unreachable", async () => {
+  const password = "Cached-Example42!";
+  const hash = createHash("sha1").update(password).digest("hex").toUpperCase();
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    return new Response(`${hash.slice(5)}:0`);
+  }) as typeof fetch;
+  try {
+    await checkPassword(password);
+    await checkPassword(password);
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("breach check refuses to accept passwords when the provider fails", async () => {
   for (const request of [async () => { throw new Error("offline"); }, async () => new Response("broken"), async () => new Response("", { status: 503 })])
     await assert.rejects(() => checkPassword("Private-Example42!", request as typeof fetch), { status: 503 });
